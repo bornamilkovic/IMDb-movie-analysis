@@ -1,0 +1,15 @@
+---
+title: "Eksplorativna analiza IMDb movie skupa podataka"
+output: html_document
+---
+```{r}
+library(dplyr)
+library(tidyverse)
+```
+
+Za početak učitajmo skup podataka i proučimo ga.
+```{r}
+movies <- read.csv("data/IMDB_movie_dataset.csv")
+head(movies)
+glimpse(movies)
+```
