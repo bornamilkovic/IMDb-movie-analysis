@@ -1,15 +1,169 @@
 ---
 title: "Eksplorativna analiza IMDb movie skupa podataka"
-output: html_document
+author: "36557473 Milković Borna"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
 ---
-```{r}
+```{r setup, include = F}
 library(dplyr)
+library(tidyr)
+library(ggplot2)
 library(tidyverse)
+library(stringr)
+
+library(GGally)
+library(MASS)
+library(sn)
+library(gridExtra)
+library(Hmisc)
+library(broom)
+library(car)
+library(corrplot)
 ```
 
-Za početak učitajmo skup podataka i proučimo ga.
+## Opis IMDb movies skupa podataka
+Za početak učitajmo skup podataka i proučimo ga. U nastavku su navedena objašnjenja pojedinih stupaca:
+
+*movie_title* - naslov filma 
+title_year - godina izlaska filma
+duration - trajanje filma (u minutama)
+*color* - govori nam je li film u boji ili je crno bijeli ("Color", "Black and White")
+genres - žanrovi u kojima film pripada
+*director_name* - ime i prezime redatelja
+country - država produkcije filma
+language - jezik kojim se primarno priča u filmu
+budget - novac uložen u kreiranje filma
+gross - novac zarađen od filma
+
+*imdb_score* - ocjena filma na IMDb stranici (0-10)
+*content_rating* - oznaka za primjerenu dob gledatelja:
+  PG-13 - neprimjereno za djecu mlađu od 13 godina, 
+  R - ograničeno gledanje za osobe mlađe od 17 godina, 
+  NC-17 - samo za odrasle, 
+  ... (za više informacija: https://www.filmratings.com/)
+*num_user_for_reviews* - broj pisanih komentara gledatelja
+*num_critic_for_reviews* - broj profesionalnih recenzija
+*num_voted_users* - broj ljudi koji su dali ocjenu
+movie_facebook_likes - broj oznaka sviđanja na filmovoj facebook stranici
+facenumber_in_poster - broj ljudi vidljiv na plakatu filma
+
+cast_total_facebook_likes - oznake sviđanja svih glumaca u filmu
+*actor_1_name*, actor_2_name, actor_3_name - imena i prezimena glavna 3 glumca filma
+director_facebook_likes - oznake sviđanja za redatelja na facebooku
+
+## Učitavanje i proučavanje skupa
+
 ```{r}
-movies <- read.csv("data/IMDB_movie_dataset.csv")
+movies <- read.csv("../data/IMDB_movie_dataset.csv")
 head(movies)
 glimpse(movies)
+#summary(movies)
 ```
+Skup podataka sastoji se od 5043 podatka opisanih s 28 stupaca.
+
+## Nedostajuće vrijednosti
+U prvih par redaka možemo vidjeti neke nedostajuće vrijednosti, ali također i prazne znakovne nizove unutar pojedinih znakovnih stupaca. Prvo ćemo pretvoriti prazne znakovne nizove u nedostajuće vrijednosti.
+
+```{r}
+
+broj_nedostajucih_prije <- movies %>% is.na() %>% sum()
+
+movies$color <- na_if(movies$color, "")
+movies$director_name <- na_if(movies$director_name, "")
+movies$actor_2_name <- na_if(movies$actor_2_name, "")
+movies$genres <- na_if(movies$genres, "")
+movies$actor_1_name <- na_if(movies$actor_1_name, "")
+movies$movie_title <- na_if(movies$movie_title, "")
+movies$actor_3_name <- na_if(movies$actor_3_name, "")
+movies$plot_keywords <- na_if(movies$plot_keywords, "")
+movies$movie_imdb_link <- na_if(movies$movie_imdb_link, "")
+movies$language <- na_if(movies$language, "")
+movies$country <- na_if(movies$country, "")
+movies$content_rating <- na_if(movies$content_rating, "")
+
+broj_nedostajucih_poslije <- movies %>% is.na() %>% sum()
+
+cat ("Broj novih NA vrijednosti: " , broj_nedostajucih_poslije - broj_nedostajucih_prije)
+
+```
+
+Sada ćemo proučiti gdje se nalazi najviše nedostajućih vrijednosti i odlučiti kako ćemo postupiti s njima.
+
+```{r}
+na_counts <- sapply(movies, function(x) sum(is.na(x)))
+sort(na_counts, decreasing = TRUE)
+```
+Stupci s najviše nedostajućih vrijednosti su povezani s potrošnjom i zaradom na filmu. Za sada nećemo uklanjati nedostajuće vrijednosti jer čine dosta velik udio u uzorku podataka, ali ćemo ih ukloniti prije analiza koje koriste navedene stupce.
+
+
+## Kategorijske varijable i uređivanje skupa
+
+Za početak možemo uočiti neke varijable znakovnog tipa poput imena države i jezika filma možemo kategorizirati pretvaranjem u tip factor. Također, stupac movie_imdb_link nam neće biti potreban za daljnu analizu pa ćemo ga ukloniti. Ako pogledamo stupac genres on trenutno izgleda kao niz žanrova kojima film pripada odvojenih okomitom crtom. Mi ćemo taj stupac razdvojiti na više stupaca koristeći pivot_wider funkciju. Konkretno od 1 stupca, dobit ćemo onoliko stupaca koliko ima različitih žanrova.
+
+```{r}
+#dublikati
+movies <- distinct(.data = movies, movie_title, .keep_all = TRUE)
+
+#kategorijske varijable
+movies$language <- factor(movies$language)
+movies$country <- factor(movies$country)
+movies$color <- factor(movies$color)
+movies$content_rating <- factor(movies$content_rating)
+movies$movie_imdb_link <- NULL
+
+
+movies %>% separate_rows(genres, sep = "\\|") %>% count(genres, sort = TRUE)
+
+movies_genre <- movies %>%
+  separate_rows(genres, sep = "\\|") %>%
+  mutate(value = 1) %>%
+  pivot_wider(names_from  = genres, values_from = value, values_fill = 0)
+
+glimpse(movies_genre)[28:52]
+
+```
+
+
+```{r}
+table(movies$language)      # najviše na engleskom, histogram ostalih
+lang_bez_eng <- movies[movies$language != "English", ]
+
+movies %>%
+  count(language) %>%
+  filter(n >= 10, language != "English") %>%
+  ggplot(aes(x = language, y = n)) +
+  geom_col() +
+  labs(title = "Brojnost filmova (10+) koji nisu na engleskom jeziku",
+       x = "Jezik",
+       y = "Broj filmova")
+```
+
+## Vizualizacija ključnih varijabli
+
+
+
+## Distribucija ratinga
+
+
+## PITANJA:
+
+# 5 najbolje ocjenjenih filmova
+# 5 filmova s najviše recenzija
+
+# 5 najbolje ocjenjenih filmova koji nisu na engleskom jeziku
+# 5 najbolje ocjenjenih filmova koji nisu američki
+
+# prosječan IMDB_rating i zarada prema žanru
+
+# usporedba ratinga kritičara i publike
+# graf godina - rating -> trend?
+# duration - broj reviews usera
+
+## Omjer budgeta i ratinga
+## omjer budgeta i grossa
+
+
+
+## Linearni model ratinga
+
