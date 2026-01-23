@@ -1,8 +1,9 @@
 ---
 title: "Eksplorativna analiza IMDb movie skupa podataka"
-author: "36557473 "
-date: "`r Sys.Date()`"
+author: '36557473 '
+date: '`r Sys.Date()`'
 output:
+  pdf_document: default
   html_document: default
 ---
 ```{r setup, include = F}
@@ -20,6 +21,7 @@ library(gridExtra)
 library(Hmisc)
 library(broom)
 library(corrplot)
+library(car)
 ```
 
 ## Opis IMDb movies skupa podataka
@@ -219,6 +221,7 @@ movies_lan %>%
        x = "Jezik",
        y = "IMDb ocjena") 
 ```
+
 Na pravokutnim dijagramima možemo vidjeti raspone ocjena po najčešćim jezicima filmova, kao i medijan i ostale kvartile. Najveći raspon imaju filmovi na engleskom jeziku upravo zbog velike brojnosti istih. Najveći medijan ocjena imaju filmovi na njemačkom jeziku.
 
 Pogledajmo još jednu zanimljivost vezanu za filmove koji nisu na engleskom jeziku.
@@ -291,7 +294,8 @@ ggplot(movies_budget, aes(x = log(budget + 1), y = imdb_score)) +
        x = "Log(budzet)",
        y = "IMDb ocjena")
 ```
-Prema grafu i koeficijentu korelacije možemo zaključiti da nema linearne ovisnosti između ocjene i budžeta.
+
+Prema grafu i malom koeficijentu korelacije možemo zaključiti da nema linearne ovisnosti između ocjene i budžeta.
 
 ### Omjer zarade i ratinga
 ```{r}
@@ -304,7 +308,8 @@ ggplot(movies_gross, aes(x = log(gross + 1), y = imdb_score)) +
        x = "Log(zarada od ulaznica)",
        y = "IMDb ocjena")
 ```
-Iako je u ovom slučaju koeficijent korelacije veći nego kod budžeta, ne možemo zaključiti postojanje linearne ovisnosti.
+
+Iako je u ovom slučaju koeficijent korelacije veći nego kod budžeta, i dalje ne možemo zaključiti postojanje linearne ovisnosti.
 
 
 #### Ovisnost budžeta i zarade od ulaznica
@@ -330,10 +335,15 @@ Ono što slutimo po koeficijentu korelacije, a graf nam dodatno potvrđuje je da
 Statistički istražimo postoji li formula koja opisuje zaradu od ulaznica preko budžeta: `zarada` = koef * `budžet`.
 
 
+
 ```{r}
 linMod <- lm(log(gross + 1) ~ log(budget + 1), data = movies_money)
+```
+```{r}
 summary(linMod)
 ```
+
+
 Možemo vidjeti da postoji statistički značajna ovisnost između dvije logaritmirane varijable, ali R-squared = 0.35 pokazuje da model objašnjava samo trećinu varijance, što upućuje na samo umjerenu prediktivnu moć modela zbog prevelike rasprženosti podataka.
 
 
@@ -391,6 +401,7 @@ ggplot(movies_trend, aes(x = title_year, y = imdb_score)) +
        y = "IMDb ocjena")
 
 ```
+
 Ovaj graf nam pokazuje IMDb ocijene za filmove prema godinama izlaska. Možemo vidjeti kako je broj ocijenjenih filmova znatno veći za razdoblje nakon 1990. godine, a razlog tomu je podatak da je IMDb stranica nastala upravo 1990. godine, a kupljena od strane Amazon-a 1998. godine što joj je pridonjelo još većoj popularnosti. Promotrimo sada medijan ocjena za svaku zabilježenu godinu filma. Za ovaj graf uzimamo medijan jer je robusniji na stršeće vrijednosti.
 
 
@@ -444,35 +455,32 @@ Radi se o vrlo poznatim i uspješnim filmovima koje ljudi i dan danas gledaju.
 
 ### Žanr filma
 
+Promotrimo sada varijablu `genres`. U uvodnom dijelu smo upoznali kako ovaj stupac izgleda kada smo ga pripremali za lienarnu regresiju. Sada ćemo raditi nad originalnim stupcem i pogledati prosječnu ocjenu po žanru. Promatrat ćemo samo žanrove sa 100 ili više filmova.
 
 ```{r}
 genre_stats <- movies %>%
   separate_rows(genres, sep = "\\|") %>%
   group_by(genres) %>%
-  summarise(
-    avg_rating = mean(imdb_score, na.rm = TRUE),
-    n = n()
-  ) %>%
-  filter(n >= 100) %>%  # da makneš rijetke žanrove
-  arrange(desc(avg_rating)) %>% # sortiraj po ratingu
-  slice_head(n = 8) 
+  summarise(avg_rating = mean(imdb_score, na.rm = TRUE), n = n()) %>%
+  filter(n >= 100) %>%
+  arrange(desc(avg_rating)) %>%
+  slice_head( n = 8) 
 
 ggplot(genre_stats,
        aes(x = reorder(genres, avg_rating), y = avg_rating, fill = genres)) +
-  geom_col() + scale_fill_brewer(palette = "Paired") +
-  labs(title = "Prosječan IMDb rating po žanru",
-       x = "Žanr",
-       y = "Prosječan rating")
+  geom_col(color = "black") + scale_fill_brewer(palette = "BuPu") +
+  scale_y_continuous(name ="Prosječna ocjena",  breaks = c(1, 5, 6, 6.5, 7, 7.5, 8)) +
+  labs(title = "Prosječan IMDb ocjena po žanru",
+       x = "Žanr")
 
-#library(RColorBrewer)
-#display.brewer.all()
 
 ```
 
-
+Graf nam pokazuje kako je prosjek ocjena najveći za dokumentarce, biografije, povijesne te ratne filmove. Filmovi tog žanra znaju biti često nagrađivani prestižnim filmskim nagradama zbog tematike kojoj se bave.
 
 ## Linearni model ratinga
-Pokušajmo sada odrediti linearnu funkciju koja najbolje opisuje IMDb rating.
+
+Pokušajmo sada odrediti linearnu funkciju koja najbolje opisuje IMDb rating. Za početak moramo ukloniti sve stupce koji nam ne trebaju, a to su svi znakovni stupci koji nisu kategorijski. Također, logaritmirat ćemo veće brojke poput zarade, budžeta i broja lajkova.
 
 ```{r}
 movies_reg <- movies_reg %>% dplyr::select(-movie_title, -director_name, -actor_1_name, -actor_2_name, -actor_3_name, -plot_keywords) 
@@ -490,88 +498,108 @@ movies_reg <- movies_reg %>%
   dplyr::select(-budget, -gross, -num_voted_users,
          -num_user_for_reviews,
          -cast_total_facebook_likes, -director_facebook_likes, -movie_facebook_likes)
+```
 
 
+Kako u skupu imamo puno kategorija za varijablu države i jezika filma, zbog brojnosti pojednostavit ćemo stupce na način da ćemo za `engLanguage` upisati 1 ako je film na engleskom jeziku, a 0 ako nije te za `USA_country` upisati 1 ako je američki film, a 0 ako nije. Za kraj ćemo obrisati sve nedostajuće vrijednosti bi svi modeli radili nad istim podacima.
 
+```{r}
 movies_reg <- movies_reg %>%
   mutate(
     engLanguage = if_else(language == "English", 1L, 0L),
     USA_country = if_else(country == "USA", 1L, 0L)
   ) %>%
   dplyr::select(-language, -country)
-```
 
-```{r}
-movies_reg <- movies_reg %>%
-  drop_na()
+movies_reg <- movies_reg %>% drop_na()
 ```
 
 
 ### Iterativna (stepwise) izgradnja prediktivnog modela
 
+Prvo ćemo stvoriti jedan linearni model koji sadrži sve varijable iz tablice `movies_reg` te jedan potpuno prazni linearni model. Uz pomoć funkcije `stepAIC`
+ stvorit ćemo nova 2 modela. Jedan od njih (`lm1`) će nastati iterativnom selekcijom prediktora od punog modela, dok će drugi (`lm2`) od potpuno praznog. 
 
-
-
-```{r}
-# stvaramo "potpuni" i "prazni" model 
+```{r, results='hold'}
 lm_sve <- lm(imdb_score ~ ., data = movies_reg)   
 lm_prazan <- lm(imdb_score ~ 1, data = movies_reg)
 
-# pogledajte sažetke gornjih modela kako bi 
-# dobili dojam kako rade "ekstremi"
-summary(lm_sve)
-summary(lm_prazan)
-
-# uz pomoć funkcije `stepAIC` stvorite modele `lm1` i `lm2` 
-# na sljedeći način
-# `lm1` - nastaje selekcijom "unatrag" od punog modela
-# `lm2` - nastaje selekcijom "unaprijed" od praznog modela
-
 lm1 <- stepAIC(lm_sve, direction = "backward", trace = 0)
 lm2 <- stepAIC(lm_prazan, scope = list(upper = lm_sve, lower = lm_prazan), direction = "forward", trace = 0)
-summary(lm1)
-summary(lm2)
+
+
+
 ```
 
+Vrijednost koja nam govori o tome koliko je model prediktivan i koliko varijance objašnjava naziva se prilagođeni koeficijenat determinacije (`Adjusted R-squared`). Usporedimo vrijednosti početnog modela i 2 modela dobivena stepwise funkcijom.
+
+```{r, results='hold'}
+cat("Adjusted R-squared vrijednosti od punog modela: ", summary(lm_sve)$adj.r.squared, '\n')
+cat("Adjusted R-squared vrijednosti od lm1 modela: ", summary(lm1)$adj.r.squared,'\n')
+cat("Adjusted R-squared vrijednosti od lm2 modela: ", summary(lm2)$adj.r.squared,'\n')
+```
+
+Usporedba prilagođenih koeficijenata determinacije pokazuje da iterativna selekcija prediktora nije dovela do značajnog poboljšanja objašnjene varijance u odnosu na puni model, što sugerira da većina varijabli doprinosi modelu ili da su njihovi učinci relativno mali. 
+
+Pogledajmo detaljnije `lm1` model.
+
+```{r}
+summary(lm1)
+```
+
+Iz ispisa možemo vidjeti koje su varijable statistički značajno (***) povezane s IMDb ocjenom. Neke od njih koje najviše pridonose boljoj ocjeni su: `num_critic_for_reviews`, `duration` i `Animation`. A neke koje najviše negativno utječu su: `title_year`, `log_gross` i `Horror`. 
+
+Valja napomenuti da statistička značajnost pojedinih varijabli ne implicira nužno uzročnu povezanost, već isključivo njihovu povezanost s IMDb ocjenom unutar promatranog modela.
 
 ### Kolinearnost ulaznih varijabli
 
+Sada ćemo provjeriti kako su ulazni podaci međusobno korelirani.
+
 ```{r, warning=FALSE}
-# u podatkovni okvir `mtcarsNumInputs` ubacite sve numeričke
-# varijable podatkovnog okvira `mtcars` osim ciljne varijable `mpg`
-moviesNumInputs <- movies_reg %>% dplyr::select(-imdb_score) %>% select_if(is.numeric)
+moviesNumInputs <- movies_reg %>% dplyr::select(color, num_critic_for_reviews, duration, 
+    actor_1_facebook_likes ,facenumber_in_poster , content_rating ,
+    title_year , aspect_ratio , Action , Fantasy , `Sci-Fi` , 
+    Thriller , Documentary , Romance , Animation , Comedy , Family , 
+    Drama , Horror , Biography , Music , log_budget , log_gross , 
+    log_votes , log_user_reviews , log_cast_likes , log_director_likes , 
+    engLanguage , USA_country) %>% select_if(is.numeric)
 
-# uz pomoć funkcije `cor` ispišite korelacijsku matricu
-# numeričkih stupaca okvira `mtcarsNumInputs`
-corMatrix <- moviesNumInputs %>% cor (use = "pairwise.complete.obs") %>% round(digits=2)
+corMatrix <- moviesNumInputs %>% cor () %>% round(digits=2)
 dimnames(corMatrix) <- NULL
-corMatrix
 
-# proslijedite taj okvir funkciji `ggpairs` paketa `GGally`
-#ggpairs(moviesNumInputs)
 
+corrplot(corMatrix, method = "color", type = "upper", tl.cex = 0.7)
 
 ```
 
+Niti jedan par varijabli u korelacijskoj matrici ne pokazuje izrazito visoke korelacijske vrijednosti (vrijednosti su približne 0), što upućuje na nisku razinu linearne povezanosti među prediktorima.
+
+
+### Multikolinearnost
+
+Kako bi provjerili odustnost multikolinearnosti, koja je jedna od ključnih pretpostavki višestruke linearne regresijem korisiti ćemo faktor inflacije varijance (VIF).
 
 ```{r}
-par(mfrow = c(1,2))
-hist(residuals(lm1), breaks = 40, main = "Residuals histogram")
-qqnorm(residuals(lm1))
-qqline(residuals(lm1))
-```
-
-```{r}
-par(mfrow = c(1,2))
-hist(residuals(lm2), breaks = 40, main = "Residuals histogram")
-qqnorm(residuals(lm1))
-qqline(residuals(lm1))
-
-plot(lm1, which = 1)
-
-library(car)
 vif(lm1)
-
-
 ```
+
+Analiza multikolinearnosti pokazala je da su sve VIF vrijednosti manje od 2.5, čime je potvrđeno da multikolinearnost ne predstavlja problem u promatranom regresijskom modelu.
+
+### Provjera normalnosti reziduala
+
+Za kraj ćemo provjeriti pretpostavke višetrukog regresijskog modela vezane uz reziduale. Prikazat ćemo odnos standardiziranih reziduala i predviđenih vrijednosti, gustoću razdiobe standardiziranih reziduala te kvantil-kvantil (Q–Q) graf reziduala.
+
+```{r, warning=FALSE}
+predikcije <- augment(lm1)
+g1 <- ggplot(predikcije, aes(x = .fitted, y = .std.resid)) + geom_point()+ geom_hline(yintercept = 0, color = "blue")
+
+g2 <- ggplot(predikcije, aes(x = .std.resid)) + geom_density()
+
+g3 <- ggplot(predikcije, aes(sample = .resid)) + geom_qq()
+grid.arrange(g1, g2, g3, ncol= 2)
+```
+
+Vizualni pregledi reziduala ukazuju na to da su pretpostavke normalnosti reziduala u velikoj mjeri zadovoljene.
+Gustoća razdiobe standardiziranih reziduala približno je simetrična, dok Q–Q graf pokazuje blaga odstupanja u repovima, što je očekivano kod većih uzoraka te ne predstavlja ozbiljno kršenje pretpostavke normalnosti. 
+
 
