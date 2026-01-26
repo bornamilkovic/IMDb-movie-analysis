@@ -1,6 +1,6 @@
 ---
-title: "Eksplorativna analiza IMDb movie skupa podataka"
-author: '36557473 '
+title: "Eksploratorna analiza IMDb movie skupa podataka"
+author: '36557473 Milković Borna'
 date: '`r Sys.Date()`'
 output:
   pdf_document: default
@@ -25,7 +25,7 @@ library(car)
 ```
 
 ## Opis IMDb movies skupa podataka
-Za početak učitajmo skup podataka i proučimo ga. U nastavku su navedena objašnjenja pojedinih stupaca:
+Za početak ćemo učitati skup podataka i proučiti ga. U nastavku su navedena objašnjenja pojedinih stupaca:
 
 - `movie_title` - naslov filma 
 - `title_year` - godina izlaska filma
@@ -99,7 +99,7 @@ Stupci s najviše nedostajućih vrijednosti su povezani s potrošnjom i zaradom 
 
 ## Uklanjanje duplikata
 
-Pregledom skupa, uočena su ista imena filmova, ovaj problem rješiti ćemo uklanjanjem duplikata.
+Pregledom skupa, uočena su ista imena filmova, ovaj problem riješiti ćemo uklanjanjem duplikata.
 
 ```{r}
 movies <- distinct(.data = movies, movie_title, .keep_all = TRUE)
@@ -107,7 +107,7 @@ movies <- distinct(.data = movies, movie_title, .keep_all = TRUE)
 
 ## Kategorijske varijable i uređivanje skupa
 
-Za početak možemo uočiti neke varijable znakovnog tipa poput imena države i jezika filma možemo kategorizirati pretvaranjem u tip `factor`. Također, stupac `movie_imdb_link` nam neće biti potreban za daljnu analizu pa ćemo ga ukloniti. 
+Za početak možemo uočiti neke varijable znakovnog tipa poput imena države i jezika filma možemo kategorizirati pretvaranjem u tip `factor`. Također, stupac `movie_imdb_link` nam neće biti potreban za daljnju analizu pa ćemo ga ukloniti. 
 
 ```{r, results='hold'}
 movies$language <- factor(movies$language)
@@ -119,7 +119,7 @@ movies$movie_imdb_link <- NULL
 ```
 
 
-Trenutno nam je stupac o žanrovima filma strukturiran na način da su svi žanrovi navedeni u jednom stupcu odvojeni okomitom crtom. Takav način mogao bi biti problematičan kod linearne regresije i treniranja modela, stoga ćemo stvoriti još jedan skup koji ćemo proširiti s stupcem za svaki postojeći žanr i vrijednostima 0 i 1 u zavisnosti je li film tog žanra ili ne.
+Trenutačno nam je stupac o žanrovima filma strukturiran tako da su svi žanrovi navedeni u jednom stupcu odvojeni okomitom crtom. Takav način mogao bi biti problematičan kod linearne regresije i treniranja modela, stoga ćemo stvoriti još jedan skup koji ćemo proširiti s stupcem za svaki postojeći žanr i vrijednostima 0 i 1 u zavisnosti je li film tog žanra ili ne.
 
 ```{r}
 movies %>% separate_rows(genres, sep = "\\|") %>% count(genres, sort = TRUE)
@@ -163,7 +163,7 @@ top5_budget <- movies %>% slice_max(order_by = budget, n = 5) %>%
   dplyr::select(movie_title, budget, imdb_score)
 top5_budget
 ```
-Ovdje je zanimljivo primjetiti da su čak 2 animirana filma (provjeri) u top 5 najskupljiih filmova.
+Ovdje je zanimljivo primijetiti da su čak 3 animirana filma (Princess Mononoke, Steamboy, Akira) u top 5 najskupljih filmova.
 
 ### 5 filmova s najvećom zaradom od prodaje ulaznica
 ```{r}
@@ -171,6 +171,8 @@ top5_gross <- movies %>% slice_max(order_by = gross, n = 5) %>%
   dplyr::select(movie_title, gross, imdb_score)
 top5_gross
 ```
+Kao što vidimo to su neki od najpoznatijih filmova današnjice.
+
 ### 5 crno-bijelih filmova s najboljim IMDb ocjenama
 
 ```{r}
@@ -184,7 +186,7 @@ top5_bw
 
 ## Vizualizacija podataka
 
-U ovom dijelu analize, fokusirati ćemo se na grafičke prikaze varijabli podatkovnog skupa te odnose, odnosno zavisnosti parova varijabli. 
+U ovom dijelu analize, fokusirat ćemo se na grafičke prikaze varijabli podatkovnog skupa te odnose, odnosno zavisnosti parova varijabli. 
 
 ### Distribucija IMDb ocjena
 
@@ -193,11 +195,11 @@ Pogledajmo kako su distribuirane ocjene za filmove u podatkovnom okviru:
 ```{r, results='hold'}
 ggplot(movies, aes(imdb_score)) + geom_density() + 
   scale_x_continuous(breaks = seq(0, 10, by = 0.5)) + 
-  labs(title = "Distribucija IMDb ocjena", x = "IMDb ocjena", y = "Gustoća")
+  labs(title = "Distribucija IMDb ocjena", x = "IMDb ocjena", y = "Gustoca") + theme_bw()
 summary(movies$imdb_score)
 ```
 
-IMDb ocjena može biti bilo koji broj iz intervala [1, 10], a ocjene za filmove unutar promatranih podataka nalaze se unutar intervala [1.6, 9.5] sa medijanom 6.6. Graf koji smo dobili nazivamo negativno zakrivljenom gaussovom krivuljom. U nastavku analize pitati ćemo se imaju li neke druge dane varijable utjecaj na ovu ocjenu.
+IMDb ocjena može biti bilo koji broj iz intervala [1, 10], a ocjene za filmove unutar promatranih podataka nalaze se unutar intervala [1.6, 9.5] s medijanom 6.6. Graf koji smo dobili nazivamo negativno zakrivljenom Gaussovom krivuljom. U nastavku analize pitat ćemo se imaju li neke druge dane varijable utjecaj na ovu ocjenu.
 
 ### Jezik filma 
 
@@ -219,7 +221,7 @@ movies_lan %>%
   geom_boxplot() + scale_y_continuous() +
   labs(title = "IMDb score po jeziku (10+ filmova)",
        x = "Jezik",
-       y = "IMDb ocjena") 
+       y = "IMDb ocjena") + theme_bw()
 ```
 
 Na pravokutnim dijagramima možemo vidjeti raspone ocjena po najčešćim jezicima filmova, kao i medijan i ostale kvartile. Najveći raspon imaju filmovi na engleskom jeziku upravo zbog velike brojnosti istih. Najveći medijan ocjena imaju filmovi na njemačkom jeziku.
@@ -247,7 +249,7 @@ number_usa
 number_no_usa
 ```
 
-Sa otprilike trostruko većim brojem filmova, američka filmska industrija ima puno veći uzorak iz kojeg filmovi mogu biti bolje ili lošije ocijenjeni, ali pogledajmo sada tablice najbolje ocijenjenih američkih filmova i najbolje ocijenjenih filmova koji ne potječu iz amerike:
+S otprilike trostruko većim brojem filmova, američka filmska industrija ima puno veći uzorak iz kojeg filmovi mogu biti bolje ili lošije ocijenjeni, ali pogledajmo sada tablice najbolje ocijenjenih američkih filmova i najbolje ocijenjenih filmova koji ne potječu iz Amerike:
 
 ```{r, results='hold'}
 top5_usa <- movies %>% filter(country == "USA") %>% 
@@ -282,7 +284,7 @@ summary(movies_gross$gross)
 
 Vidimo da su vrijednosti zarade raspršenije od vrijednosti budžeta. Minimalna vrijednost zarade od filma iznosi 162, što se na prvi pogled čini kao krivo unesen podatak, daljnjim proučavanjem saznajemo da IMDb ocjena tog filma iznosi 5.7, što može donekle objasniti podatak o zaradi kao filmski neuspjeh.
 
-### Omjer budgeta i ratinga
+### Omjer budžeta i ocjene
 
 ```{r}
 cor(movies_budget$budget, movies_budget$imdb_score)
@@ -290,14 +292,14 @@ cor(movies_budget$budget, movies_budget$imdb_score)
 ggplot(movies_budget, aes(x = log(budget + 1), y = imdb_score)) +
   geom_point(alpha = 0.3) +
   geom_smooth(formula = y ~ x, method = "lm", color = "red") +
-  labs(title = "IMDb ocjena po budžetu filma",
+  labs(title = "IMDb ocjena po budzetu filma",
        x = "Log(budzet)",
-       y = "IMDb ocjena")
+       y = "IMDb ocjena") + theme_bw()
 ```
 
 Prema grafu i malom koeficijentu korelacije možemo zaključiti da nema linearne ovisnosti između ocjene i budžeta.
 
-### Omjer zarade i ratinga
+### Omjer zarade i ocjene
 ```{r}
 cor(movies_gross$gross, movies_gross$imdb_score)
 
@@ -306,13 +308,14 @@ ggplot(movies_gross, aes(x = log(gross + 1), y = imdb_score)) +
   geom_smooth(formula = y ~ x, method = "lm", color = "red") +
   labs(title = "IMDB ocjena po zaradi od ulaznica",
        x = "Log(zarada od ulaznica)",
-       y = "IMDb ocjena")
+       y = "IMDb ocjena") + theme_bw()
 ```
 
 Iako je u ovom slučaju koeficijent korelacije veći nego kod budžeta, i dalje ne možemo zaključiti postojanje linearne ovisnosti.
 
 
-#### Ovisnost budžeta i zarade od ulaznica
+### Ovisnost budžeta i zarade od ulaznica
+
 
 Pogledajmo koeficijent korelacije te graf ovisnosti logaritamskih vrijednosti budžeta filma i zarade od prodaje ulaznica.
 
@@ -324,45 +327,44 @@ ggplot(movies_money, aes(x = log(budget + 1), y = log(gross + 1))) +
   geom_smooth(formula = y ~ x, method = "lm", color = "red") +
   labs(title = "Ovisnost budzeta i zarade od ulaznica",
        x = "Log (budzet)",
-       y = "Log (zarada)")
+       y = "Log (zarada)") + theme_bw()
 
 cor(log(movies_money$budget + 1),log(movies_money$gross + 1) )
 ```
 Ono što slutimo po koeficijentu korelacije, a graf nam dodatno potvrđuje je da opravdano sumnjamo na postojanje linearna ovisnosti između dvije varijable. Vidimo da su točke na grafu dosta raspršene za male vrijednosti, ali za visoke iznose budžeta i zarade ovisnost se više naslućuje s određenim odstupanjima. Pokušajmo potvrditi ovu ovisnost linearnim modelom.
 
-#### Linearni model zarade i budžeta
+### Linearni model zarade i budžeta
 
-Statistički istražimo postoji li formula koja opisuje zaradu od ulaznica preko budžeta: `zarada` = koef * `budžet`.
 
+Statistički istražimo postoji li formula koja opisuje zaradu od ulaznica preko budžeta: `zarada` = koeficijent * `budžet`.
 
 
 ```{r}
 linMod <- lm(log(gross + 1) ~ log(budget + 1), data = movies_money)
-```
-```{r}
+
 summary(linMod)
 ```
 
 
-Možemo vidjeti da postoji statistički značajna ovisnost između dvije logaritmirane varijable, ali R-squared = 0.35 pokazuje da model objašnjava samo trećinu varijance, što upućuje na samo umjerenu prediktivnu moć modela zbog prevelike rasprženosti podataka.
+Možemo vidjeti da postoji statistički značajna ovisnost između dvije logaritmirane varijable, ali R-squared = 0.35 pokazuje da model objašnjava samo trećinu varijance, što upućuje na samo umjerenu prediktivnu moć modela zbog prevelike raspršenosti podataka.
 
 
-### Broj ocjena korisnka
+### Broj ocjena korisnika
 
-Sljedeća varijabla koju ćemo istražiti je `num_voted_users` koja nam govori koliko korisnika IMDb stranice je dalo svoju ocjenu za film. Ovaj podatak nam može reći koliki doseg je film imao, ali moramo imati na umu da većina ljudi samo pogleda film bez da ga ocijeni na internetu. 
+Sljedeća varijabla koju ćemo istražiti je `num_voted_users` koja nam govori koliko korisnika IMDb stranice je dalo svoju ocjenu za film. Ovaj podatak nam može reći koliki doseg je film imao, ali moramo imati na umu da većina ljudi samo pogleda film a da ga ocijeni na internetu. 
 
 ```{r, results='hold'}
 movies_glasovi <- movies[!is.na(movies$num_voted_users),]
 ggplot(movies_glasovi, aes(x = log(num_voted_users + 1), y = imdb_score)) +
   geom_point(alpha = 0.3) +
-  geom_smooth(method = "lm", color = "red") +
+  geom_smooth(formula = y ~ x, method = "lm", color = "red") +
   labs(title = "IMDb score i broj ocjena",
        x = "Log broj ocjena",
-       y = "IMDb ocjena")
+       y = "IMDb ocjena") + theme_bw()
 koef_korelacija_prije <- cor(movies_glasovi$num_voted_users, movies_glasovi$imdb_score)
 
 ```
-Na ovom grafu vidimo veliku raspršenost ocjena za malen broj ocjenjivača. Zanimljivo je pogledati kako se podaci "nakupljaju", odnosno grupiraju za sve veći broj ocjena. Iz ovog razloga pogledati ćemo još jedan ovakav graf, ali samo za filmove koje je više od 100 tisuća ljudi ocijenilo. Ovime ćemo probati pokazati postoji li tendencija da što je film "bolji" to će više ljudi ostaviti svoju ocjenu za njega. Naravno treba biti oprezan na to da je dobra ocjena jedan od mogućih razloga zašto neki ljudi uopće saznaju za neke filmove i odluče ih pogledati, stoga veća gledanost može rezultirati i većim brojem glasova, ali nažalost podatak o gledanosti nemamo u našem podatkovnom okviru tako da ne možemo taj utjecaj potvrditi u ovom trenutku.
+Na ovom grafu vidimo veliku raspršenost ocjena za malen broj ocjenjivača. Zanimljivo je pogledati kako se podaci "nakupljaju", odnosno grupiraju za sve veći broj ocjena. Iz ovog razloga pogledat ćemo još jedan ovakav graf, ali samo za filmove koje je više od 100 tisuća ljudi ocijenilo. Ovime ćemo probati pokazati postoji li tendencija da što je film "bolji" to će više ljudi ostaviti svoju ocjenu za njega. Naravno treba biti oprezan na to da je dobra ocjena jedan od mogućih razloga zašto neki ljudi uopće saznaju za neke filmove i odluče ih pogledati, stoga veća gledanost može rezultirati i većim brojem glasova, ali nažalost podatak o gledanosti nemamo u našem podatkovnom okviru tako da ne možemo taj utjecaj potvrditi u ovom trenutku.
 
 ```{r}
 movies_glasovi <- movies_glasovi[movies_glasovi$num_voted_users > 100000,]
@@ -371,11 +373,12 @@ ggplot(movies_glasovi, aes(x = log(num_voted_users + 1), y = imdb_score)) +
   geom_smooth(formula = y ~ x, method = "lm", color = "red") +
   labs(title = "IMDb score i broj ocjena (filmovi s preko 100 tisuća ocjena)",
        x = "Log broj ocjena",
-       y = "IMDb ocjena")
+       y = "IMDb ocjena") + theme_bw()
 koef_korelacija_poslije <- cor(movies_glasovi$num_voted_users, movies_glasovi$imdb_score)
 
 ```
-Na ovom grafu vidimo jaču linearnu vezu, provjerimo s koeficijentom korelacije koliko su varijable zaista povezanije nakon odabiranja češće ocijenjivanih filmova.
+
+Na ovom grafu vidimo jaču linearnu vezu, provjerimo s koeficijentom korelacije koliko su varijable zaista povezanije nakon odabiranja češće ocjenjivanih filmova.
 
 
 ```{r}
@@ -398,11 +401,11 @@ ggplot(movies_trend, aes(x = title_year, y = imdb_score)) +
   geom_smooth(formula = y ~ x, method = "loess", color = "blue") +
   labs(title = "Trend IMDb ocjene kroz godine",
        x = "Godina",
-       y = "IMDb ocjena")
+       y = "IMDb ocjena") + theme_bw()
 
 ```
 
-Ovaj graf nam pokazuje IMDb ocijene za filmove prema godinama izlaska. Možemo vidjeti kako je broj ocijenjenih filmova znatno veći za razdoblje nakon 1990. godine, a razlog tomu je podatak da je IMDb stranica nastala upravo 1990. godine, a kupljena od strane Amazon-a 1998. godine što joj je pridonjelo još većoj popularnosti. Promotrimo sada medijan ocjena za svaku zabilježenu godinu filma. Za ovaj graf uzimamo medijan jer je robusniji na stršeće vrijednosti.
+Ovaj graf nam pokazuje IMDb ocijene za filmove prema godinama izlaska. Možemo vidjeti kako je broj ocijenjenih filmova znatno veći za razdoblje nakon 1990. godine, a razlog tomu je podatak da je IMDb stranica nastala upravo 1990. godine, a kupljena od strane Amazona 1998. godine što joj je pridonijelo još većoj popularnosti. Promotrimo sada medijan ocjena za svaku zabilježenu godinu filma. Za ovaj graf uzimamo medijan jer je robusniji na stršeće vrijednosti.
 
 
 ```{r}
@@ -413,7 +416,7 @@ ggplot(movies_trend, aes(x = title_year, y = median_rating)) + geom_point() +
   geom_smooth(formula = y ~ x, method = "loess") + geom_line(group = 1) +
   labs(title = "Medijan IMDb ratinga kroz godine",
        x = "Godina",
-       y = "Medijan IMDb ocjena")
+       y = "Medijan IMDb ocjena") + theme_bw()
 ```
 
 Ovaj graf daje nam par zanimljivih informacija. 2 najlošija medijana u 20.stoljeću dogodila su se u poslijeratnom periodu oba svjetska rata. Trend nam pokazuje da su ocjene novijih filmova lošije od ocjena starijih. Jedan od mogućih objašnjenja ovog trenda je da korisnici starije filmove češće gledaju jer su već čuli da je film jako dobar ili su vidjeli da ima jako dobru ocjenu pa su ga odlučili pogledat. Vjerojatno se radi o filmskim klasicima kojima se ljudi rado vraćaju i ponovo gledaju. Nakon osnutka IMDb-a korisnici su počeli ocjenjivati filmove sve češće, odnosno ocjenjivali bi filmove nakon što ih prvi puta pogledaju. Sa sve više filmova, došlo je i sve više lošije ocijenjenih filmova zbog kojih je median niži u 21.stoljeću. 
@@ -427,9 +430,9 @@ movies_trend2 <- movies[!is.na(movies$num_voted_users)
 
 ggplot(movies_trend2, aes(x = title_year, y = (avg_votes))) + 
   geom_point() + geom_smooth(formula = y ~ x, method = "loess")  +
-  labs(title = "Prosječan broja glasova po godinama",
+  labs(title = "Prosjecan broja glasova po godinama",
        x = "Godina",
-       y = "prosječan broja glasova po filmu")
+       y = "prosjecan broja glasova po filmu") + theme_bw()
 ```
 
 Uz trend koji upućuje na povećanje prosječnog broja glasova, na ovom grafu primjećujemo i par točaka koje jako odstupaju od dugih. 3 godine s najvećim prosjekom su 1942., 1957., 1975. Pogledajmo koji su najbolje ocijenjeni filmovi iz tih godina.
@@ -455,7 +458,7 @@ Radi se o vrlo poznatim i uspješnim filmovima koje ljudi i dan danas gledaju.
 
 ### Žanr filma
 
-Promotrimo sada varijablu `genres`. U uvodnom dijelu smo upoznali kako ovaj stupac izgleda kada smo ga pripremali za lienarnu regresiju. Sada ćemo raditi nad originalnim stupcem i pogledati prosječnu ocjenu po žanru. Promatrat ćemo samo žanrove sa 100 ili više filmova.
+Promotrimo sada varijablu `genres`. U uvodnom dijelu smo upoznali kako ovaj stupac izgleda kada smo ga pripremali za linearnu regresiju. Sada ćemo raditi nad originalnim stupcem i pogledati prosječnu ocjenu po žanru. Promatrat ćemo samo žanrove sa 100 ili više filmova.
 
 ```{r}
 genre_stats <- movies %>%
@@ -469,9 +472,9 @@ genre_stats <- movies %>%
 ggplot(genre_stats,
        aes(x = reorder(genres, avg_rating), y = avg_rating, fill = genres)) +
   geom_col(color = "black") + scale_fill_brewer(palette = "BuPu") +
-  scale_y_continuous(name ="Prosječna ocjena",  breaks = c(1, 5, 6, 6.5, 7, 7.5, 8)) +
-  labs(title = "Prosječan IMDb ocjena po žanru",
-       x = "Žanr")
+  scale_y_continuous(name ="Prosjecna ocjena",  breaks = c(1, 5, 6, 6.5, 7, 7.5, 8)) +
+  labs(title = "Prosjecan IMDb ocjena po zanru",
+       x = "Zanr") + theme_bw()
 
 
 ```
@@ -480,7 +483,7 @@ Graf nam pokazuje kako je prosjek ocjena najveći za dokumentarce, biografije, p
 
 ## Linearni model ratinga
 
-Pokušajmo sada odrediti linearnu funkciju koja najbolje opisuje IMDb rating. Za početak moramo ukloniti sve stupce koji nam ne trebaju, a to su svi znakovni stupci koji nisu kategorijski. Također, logaritmirat ćemo veće brojke poput zarade, budžeta i broja lajkova.
+Pokušajmo sada odrediti linearnu funkciju koja najbolje opisuje IMDb rating. Za početak moramo ukloniti sve stupce koji nam ne trebaju, a to su svi znakovni stupci koji nisu kategorijski. Također, logaritmirati ćemo veće brojke poput zarade, budžeta i broja lajkova.
 
 ```{r}
 movies_reg <- movies_reg %>% dplyr::select(-movie_title, -director_name, -actor_1_name, -actor_2_name, -actor_3_name, -plot_keywords) 
@@ -501,7 +504,7 @@ movies_reg <- movies_reg %>%
 ```
 
 
-Kako u skupu imamo puno kategorija za varijablu države i jezika filma, zbog brojnosti pojednostavit ćemo stupce na način da ćemo za `engLanguage` upisati 1 ako je film na engleskom jeziku, a 0 ako nije te za `USA_country` upisati 1 ako je američki film, a 0 ako nije. Za kraj ćemo obrisati sve nedostajuće vrijednosti bi svi modeli radili nad istim podacima.
+Kako u skupu imamo puno kategorija za varijablu države i jezika filma, zbog brojnosti pojednostavit ćemo stupce tako da ćemo za `engLanguage` upisati 1 ako je film na engleskom jeziku, a 0 ako nije te za `USA_country` upisati 1 ako je američki film, a 0 ako nije. Za kraj ćemo obrisati sve nedostajuće vrijednosti bi svi modeli radili nad istim podacima.
 
 ```{r}
 movies_reg <- movies_reg %>%
@@ -531,7 +534,7 @@ lm2 <- stepAIC(lm_prazan, scope = list(upper = lm_sve, lower = lm_prazan), direc
 
 ```
 
-Vrijednost koja nam govori o tome koliko je model prediktivan i koliko varijance objašnjava naziva se prilagođeni koeficijenat determinacije (`Adjusted R-squared`). Usporedimo vrijednosti početnog modela i 2 modela dobivena stepwise funkcijom.
+Vrijednost koja nam govori o tome koliko je model prediktivan i koliko varijance objašnjava naziva se prilagođeni koeficijent determinacije (`Adjusted R-squared`). Usporedimo vrijednosti početnog modela i 2 modela dobivena stepwise funkcijom.
 
 ```{r, results='hold'}
 cat("Adjusted R-squared vrijednosti od punog modela: ", summary(lm_sve)$adj.r.squared, '\n')
@@ -572,12 +575,12 @@ corrplot(corMatrix, method = "color", type = "upper", tl.cex = 0.7)
 
 ```
 
-Niti jedan par varijabli u korelacijskoj matrici ne pokazuje izrazito visoke korelacijske vrijednosti (vrijednosti su približne 0), što upućuje na nisku razinu linearne povezanosti među prediktorima.
+Većina parova varijabli u korelacijskoj matrici ne pokazuju izrazito visoke korelacijske vrijednosti (vrijednosti su približne 0), što upućuje na nisku razinu linearne povezanosti među prediktorima.
 
 
 ### Multikolinearnost
 
-Kako bi provjerili odustnost multikolinearnosti, koja je jedna od ključnih pretpostavki višestruke linearne regresijem korisiti ćemo faktor inflacije varijance (VIF).
+Kako bi provjerili odsutnost multikolinearnosti, koja je jedna od ključnih pretpostavki višestruke linearne regresije koristit ćemo faktor inflacije varijance (VIF).
 
 ```{r}
 vif(lm1)
@@ -587,15 +590,15 @@ Analiza multikolinearnosti pokazala je da su sve VIF vrijednosti manje od 2.5, �
 
 ### Provjera normalnosti reziduala
 
-Za kraj ćemo provjeriti pretpostavke višetrukog regresijskog modela vezane uz reziduale. Prikazat ćemo odnos standardiziranih reziduala i predviđenih vrijednosti, gustoću razdiobe standardiziranih reziduala te kvantil-kvantil (Q–Q) graf reziduala.
+Za kraj ćemo provjeriti pretpostavke višestrukog regresijskog modela vezane uz reziduale. Prikazat ćemo odnos standardiziranih reziduala i predviđenih vrijednosti, gustoću razdiobe standardiziranih reziduala te kvantil-kvantil (Q–Q) graf reziduala.
 
 ```{r, warning=FALSE}
 predikcije <- augment(lm1)
-g1 <- ggplot(predikcije, aes(x = .fitted, y = .std.resid)) + geom_point()+ geom_hline(yintercept = 0, color = "blue")
+g1 <- ggplot(predikcije, aes(x = .fitted, y = .std.resid)) + geom_point()+ geom_hline(yintercept = 0, color = "blue") + theme_bw()
 
-g2 <- ggplot(predikcije, aes(x = .std.resid)) + geom_density()
+g2 <- ggplot(predikcije, aes(x = .std.resid)) + geom_density() + theme_bw()
 
-g3 <- ggplot(predikcije, aes(sample = .resid)) + geom_qq()
+g3 <- ggplot(predikcije, aes(sample = .resid)) + geom_qq() + theme_bw()
 grid.arrange(g1, g2, g3, ncol= 2)
 ```
 
