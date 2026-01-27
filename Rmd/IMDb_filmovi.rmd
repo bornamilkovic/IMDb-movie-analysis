@@ -530,8 +530,6 @@ lm_prazan <- lm(imdb_score ~ 1, data = movies_reg)
 lm1 <- stepAIC(lm_sve, direction = "backward", trace = 0)
 lm2 <- stepAIC(lm_prazan, scope = list(upper = lm_sve, lower = lm_prazan), direction = "forward", trace = 0)
 
-
-
 ```
 
 Vrijednost koja nam govori o tome koliko je model prediktivan i koliko varijance objašnjava naziva se prilagođeni koeficijent determinacije (`Adjusted R-squared`). Usporedimo vrijednosti početnog modela i 2 modela dobivena stepwise funkcijom.
@@ -552,11 +550,11 @@ summary(lm1)
 
 Iz ispisa možemo vidjeti koje su varijable statistički značajno (***) povezane s IMDb ocjenom. Neke od njih koje najviše pridonose boljoj ocjeni su: `num_critic_for_reviews`, `duration` i `Animation`. A neke koje najviše negativno utječu su: `title_year`, `log_gross` i `Horror`. 
 
-Valja napomenuti da statistička značajnost pojedinih varijabli ne implicira nužno uzročnu povezanost, već isključivo njihovu povezanost s IMDb ocjenom unutar promatranog modela.
+Valja napomenuti da statistička značajnost pojedinih varijabli ne implicira nužno uzročnu povezanost, već isključivo njihovu povezanost s IMDb ocjenom unutar promatranog modela. Linearni model opisuje 57 % varijance, što je statistički nedovoljno da proglasimo naš model jako dobrim prediktorom budućih IMDb ocjena. Ovdje ostavljamo mjesta za napredak budućim analizama da uz pomoć drugih transformacija i metoda prediktivnih modela poboljšaju prediktivni model za izračun ocjene.
 
 ### Kolinearnost ulaznih varijabli
 
-Sada ćemo provjeriti kako su ulazni podaci međusobno korelirani.
+Sada ćemo provjeriti u kojoj mjeri su ulazni podaci međusobno korelirani.
 
 ```{r, warning=FALSE}
 moviesNumInputs <- movies_reg %>% dplyr::select(color, num_critic_for_reviews, duration, 
@@ -606,3 +604,6 @@ Vizualni pregledi reziduala ukazuju na to da su pretpostavke normalnosti rezidua
 Gustoća razdiobe standardiziranih reziduala približno je simetrična, dok Q–Q graf pokazuje blaga odstupanja u repovima, što je očekivano kod većih uzoraka te ne predstavlja ozbiljno kršenje pretpostavke normalnosti. 
 
 
+## Zaključak
+
+U ovoj analizi smo se pokušali, prije svega, što bolje upoznati sa skupom podataka i iz njega izvući neke zanimljive činjenice o filmovima objavljenima do 2016. godine. Također, istraživali smo kakav utjecaj pojedine varijable imaju na IMDb ocjenu filma uz pomoć koeficijenata korelacije, vizualizacija i prediktivnog linearnog modela koji objašnjava približno 57 % varijance uzorka. Kao mjesto za napredak i budući rad smatram učitavanje novijih filmova u podatkovni skup te treniranje naprednijih prediktivnih modela kao i igranje sa samim parametrima modela.
