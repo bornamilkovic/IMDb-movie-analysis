@@ -144,6 +144,9 @@ top5 <- movies %>% slice_max(order_by = imdb_score, n = 5) %>%
   dplyr::select(movie_title, imdb_score)
 top5
 ```
+
+
+###
 ### 5 filmova s najviše ocjena korisnika
 ```{r}
 top5_num_votes <- movies %>% slice_max(order_by = num_voted_users, n = 5) %>% 
@@ -165,6 +168,7 @@ top5_budget
 ```
 Ovdje je zanimljivo primijetiti da su čak 3 animirana filma (Princess Mononoke, Steamboy, Akira) u top 5 najskupljih filmova.
 
+#
 ### 5 filmova s najvećom zaradom od prodaje ulaznica
 ```{r}
 top5_gross <- movies %>% slice_max(order_by = gross, n = 5) %>% 
@@ -466,15 +470,16 @@ genre_stats <- movies %>%
   group_by(genres) %>%
   summarise(avg_rating = mean(imdb_score, na.rm = TRUE), n = n()) %>%
   filter(n >= 100) %>%
-  arrange(desc(avg_rating)) %>%
-  slice_head( n = 8) 
+  slice_head( n = 8) %>%
+  mutate(genres = fct_reorder(genres, avg_rating))
+
 
 ggplot(genre_stats,
        aes(x = reorder(genres, avg_rating), y = avg_rating, fill = genres)) +
   geom_col(color = "black") + scale_fill_brewer(palette = "BuPu") +
   scale_y_continuous(name ="Prosjecna ocjena",  breaks = c(1, 5, 6, 6.5, 7, 7.5, 8)) +
   labs(title = "Prosjecan IMDb ocjena po zanru",
-       x = "Zanr") + theme_bw()
+       x = "Zanr") + theme_bw() + theme(axis.text.x = element_text(angle = 90))
 
 
 ```
