@@ -1,7 +1,7 @@
 # IMDB-movie-analysis
 Exploratory data analysis (EDA) of an IMDb movie dataset, focusing on factors associated with IMDb score and simple predictive modeling.
 
-## Summary
+## 🚀 Summary
 - Dataset: 5043 movies with 28 variables (latest entries up to 2016).
 - Cleaning: converted empty strings to missing values, inspected missingness (most missing: `gross`, `budget`, `aspect_ratio`), and removed duplicate movie titles.
 - Ratings: IMDb scores range roughly 1.6–9.5 with a median around 6.6.
@@ -13,16 +13,16 @@ Exploratory data analysis (EDA) of an IMDb movie dataset, focusing on factors as
 - Genres: documentaries/biographies/history/war tend to have higher average scores; horror tends to be associated with lower scores.
 - Modeling: a multiple linear regression achieves ~0.57 adjusted R²; multicollinearity checks show no major issues (VIF values low) and residual diagnostics are acceptable.
 
-## Report
+## 📖 Report
 - 📄 Full report (Croatian): [IMDb_filmovi.pdf](IMDb_filmovi.pdf)
 - 📓 R Markdown: [Rmd/IMDb_filmovi.rmd](Rmd/IMDb_filmovi.rmd)
 
-## Reproduce
+## ⚙️ Reproduce
 1. Open `Rmd/IMDb_filmovi.rmd` in RStudio
 2. Install required packages (if missing)
 3. Knit to PDF/HTML
 
-## Project structure
+## 📁 Project structure
 - `Rmd/` – analysis source (R Markdown)
 - `IMDb_filmovi.pdf` – rendered report
 - `figures/` – exported plots for embedding in README
