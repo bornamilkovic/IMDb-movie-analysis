@@ -1,0 +1,5 @@
+*.Rmd linguist-language=R
+*.Rproj linguist-language=R
+*.html linguist-generated=true
+*.R linguist-language=R
+*.r linguist-language=R
